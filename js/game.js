@@ -14,6 +14,7 @@ var game = {
 	state: states.playing
 };
 
+var worldElem = document.getElementById('world');
 var ringsNumberElem = document.getElementById('ringsNumber');
 var distanceElem = document.getElementById('distance');
 
@@ -404,6 +405,10 @@ function addRings() {
 		ringSet.spawnRings();
 	}
 }
+
+var gradientTop = 0xf4e0ba;
+var gradientBottom = 0xe7d9aa;
+
 function loop() {
 	// airplane.propeller.rotation.x += 0.3;
 	// sea.mesh.rotation.z += 0.005;
@@ -414,6 +419,9 @@ function loop() {
 	updateTime();
 	updateDistance();
 	addRings();
+	console.log('background color: ' + worldElem.style.backgroundColor);
+	worldElem.style.backgroundColor = gradientTop;
+	gradientTop = 0xffffff;
 	renderer.render(scene, camera);
 	requestAnimationFrame(loop);
 }
