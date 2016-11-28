@@ -1,3 +1,22 @@
+var states = {
+    playing: 0,
+    start: 1,
+    end: 2
+};
+
+var game = {
+    speed: 20,
+    difficulty: 1,
+    seaRadius: 600,
+    time: new Date().getTime(),
+    score: 0,
+    goodRings: 0,
+    state: states.playing
+};
+
+var ringsNumberElem = document.getElementById('ringsNumber');
+var distanceElem = document.getElementById('distance');
+
 var Colors = {
     red: 0xf25346,
     white: 0xf8d0d1,
@@ -6,6 +25,7 @@ var Colors = {
     brownDark: 0x23190f,
     blue: 0x68c3c0,
 };
+
 window.addEventListener('load', init, false);
 function init() {
     createScene();
@@ -13,14 +33,11 @@ function init() {
     createPlane();
     createSea();
     createSky();
-    startWars();
-    // createStarWarsPlane();
+    createRings();
     document.addEventListener('mousemove', handleMouseMove, false);
     loop();
 }
-
 var scene, camera, fieldOfView, aspectRatio, nearPlane, farPlane, HEIGHT, WIDTH, renderer, container;
-
 function createScene() {
     HEIGHT = window.innerHeight;
     WIDTH = window.innerWidth;
@@ -49,7 +66,6 @@ function createScene() {
     container.appendChild(renderer.domElement);
     window.addEventListener('resize', handleWindowResize, false);
 }
-
 function handleWindowResize() {
     HEIGHT = window.innerHeight;
     WIDTH = window.innerWidth;
@@ -57,9 +73,7 @@ function handleWindowResize() {
     camera.aspect = WIDTH / HEIGHT;
     camera.updateProjectionMatrix();
 }
-
 var hemisphereLight, shadowLight;
-
 function createLights() {
     hemisphereLight = new THREE.HemisphereLight(0xa1a2a3,0x000000, .9);
     shadowLight = new THREE.DirectionalLight(0xffffff, .8);
@@ -78,9 +92,13 @@ function createLights() {
     scene.add(shadowLight);
     scene.add(ambientLight);
 }
-
+var cylinderRadius = 600;
+var mousePos = {
+    x: 0,
+    y: 0
+};
 Sea = function() {
-    var geom = new THREE.CylinderGeometry(600, 600, 800, 60, 30);
+    var geom = new THREE.CylinderGeometry(cylinderRadius, 600, 800, 60, 30);
     geom.applyMatrix(new THREE.Matrix4().makeRotationX(-Math.PI / 2));
     geom.mergeVertices();
     this.waves = [];
@@ -93,7 +111,7 @@ Sea = function() {
             z: v.z,
             angle: Math.random() * Math.PI * 2,
             dist: 5 + Math.random() * 15,
-            speed: 0.016 + Math.random() * 0.03
+            speed: game.speed * 0.0008 + Math.random() * 0.03
         });
     }
     var mat = new THREE.MeshPhongMaterial({
@@ -105,7 +123,6 @@ Sea = function() {
     this.mesh = new THREE.Mesh(geom, mat);
     this.mesh.receiveShadow = true;
 }
-
 Sea.prototype.moveWaves = function() {
     var vertices = this.mesh.geometry.vertices;
     var sz = vertices.length;
@@ -117,23 +134,18 @@ Sea.prototype.moveWaves = function() {
         vp.angle += vp.speed;
     }
     this.mesh.geometry.verticesNeedUpdate = true;
-    sea.mesh.rotation.z += 0.005;
+    sea.mesh.rotation.z += game.speed * 0.00025;
 }
-
 var sea;
-
 function createSea() {
     sea = new Sea();
     sea.mesh.position.y = -600;
     scene.add(sea.mesh);
 }
-
 Cloud = function() {
     this.mesh = new THREE.Object3D();
-    var geom = new THREE.BoxGeometry(20, 20, 20);
-    var mat = new THREE.MeshPhongMaterial({
-        colors: Colors.white
-    });
+    var geom = new THREE.TetrahedronGeometry(50,2);
+    var mat = new THREE.MeshBasicMaterial( {color: 0x808080 } );
     var nBlocs = 3 + Math.floor(Math.random() * 3);
     for (var i = 0; i < nBlocs; i++) {
         var m = new THREE.Mesh(geom, mat);
@@ -149,7 +161,6 @@ Cloud = function() {
         this.mesh.add(m);
     }
 }
-
 Sky = function() {
     this.mesh = new THREE.Object3D();
     this.nClouds = 20;
@@ -167,15 +178,120 @@ Sky = function() {
         this.mesh.add(c.mesh);
     }
 }
-
 var sky;
-
 function createSky() {
     sky = new Sky();
     sky.mesh.position.y = -600;
     scene.add(sky.mesh);
 }
+Ring = function(r) {
+    console.log('RADI:' + r);
+    var geom = new THREE.RingGeometry(r, r + 6, 50, 20);
+    geom.applyMatrix(new THREE.Matrix4().makeRotationY(Math.PI / 2 - 0.2));
+    var mat = new THREE.MeshPhongMaterial({
+        color: 0xffff00,
+        side: THREE.DoubleSide
+    });
+    // var mat = new THREE.MeshBasicMaterial( { color: 0xffff00, side: THREE.DoubleSide } );
+    this.angle = 0;
+    this.dist = 0;
+    this.radius = r;
+    this.delete = false;
+    this.mesh = new THREE.Mesh(geom, mat);
+    this.mesh.receiveShadow = true;
+}
+var ringSet;
+RingSet = function(n) {
+    this.currentRings = [];
+    this.nextRings = [];
+    this.mesh = new THREE.Object3D();
+    for (var i = 0; i < n; i++) {
+        var r = Math.random() * 25 + 10;
+        var ring = new Ring(r);
+        // var s = Math.random() * 2;
+        // s = Math.max(s, 1.2);
+        // ring.mesh.scale.set(r, r, r);
+        this.nextRings.push(ring);
+    }
+}
+RingSet.prototype.spawnRings = function() {
+    var n = Math.floor(Math.random()) * 10 + 1;
+    var radius = cylinderRadius * Math.max(Math.random() - 0.6, Math.random() * 0.2 + 0.1);
+    for (var i = 0; i < n; i++) {
+        var ring;
+        if (!this.nextRings.length) {
+            for (var j = 0; j < 20; j++) this.nextRings.push(new Ring(Math.random() * 25 + 10));
+        }
+        ring = this.nextRings.pop();
+        this.mesh.add(ring.mesh);
+        this.currentRings.push(ring);
+        ring.angle = -(i * 0.06);
+        ring.dist = radius;
+        ring.mesh.position.x = Math.cos(ring.angle) * ring.dist;
+        ring.mesh.position.y = Math.sin(ring.angle) * ring.dist;
+    }
+}
+function updateRingScore(n) {
+    game.goodRings += n;
+    ringsNumberElem.innerHTML = game.goodRings;
+}
 
+RingSet.prototype.update = function() {
+    var n = this.currentRings.length;
+    for (var i = 0; i < n; i++) {
+        var ring = this.currentRings[i];
+        if (!ring) continue;
+        ring.angle += Math.random() * game.speed * 0.002;
+        ring.mesh.position.x = Math.cos(ring.angle) * ring.dist;
+        ring.mesh.position.y = Math.sin(ring.angle) * ring.dist;
+        ring.mesh.rotation.x += 0.02;
+        // check if the plane has passed to a ring
+        var targetX = normalize(mousePos.x, -1, 1, -100, 100);
+        var targetY = normalize(mousePos.y, -1, 1, 25, 175);
+        console.log('player y: ' + targetY);
+        if (i == 0) {
+            // console.log('player y: ' + targetY);
+            console.log('ring y: ' + ring.mesh.position.y);
+        }
+        if (targetY >= ring.mesh.position.y - ring.radius && targetY <= ring.mesh.position.y + ring.radius) {
+            if (ring.mesh.position.x >= -5 && ring.mesh.position.x <= 5) {
+                ring.delete = true;
+            }
+        }
+        bad = function(ring) {
+            ring.mesh.scale.x -= 0.1;
+            ring.mesh.scale.y -= 0.1;
+            ring.mesh.scale.z -= 0.1;
+            if (ring.mesh.scale.x < 0 && ring.mesh.scale.y < 0 && ring.mesh.scale.z < 0) return true;
+            return false;
+        }
+        if (ring.delete && bad(ring)) {
+            ring.delete = false;
+            // this.nextRings.unshift(this.currentRings.splice(i,1)[0]);
+            this.currentRings.splice(i, 1);
+            this.mesh.remove(ring.mesh);
+            i--;
+            updateRingScore(1);
+            continue;
+        }
+        // check if it's out of the screen
+        if (ring.angle > Math.PI) {
+            this.currentRings.splice(i, 1);
+            // this.currentRings.splice(i, 1);
+            this.mesh.remove(ring.mesh);
+            i--;
+        }
+    }
+}
+function createRings() {
+    ringSet = new RingSet(15);
+    scene.add(ringSet.mesh);
+    // ring = new Ring();
+    // // ring.mesh.position.x = 0;
+    // ring.mesh.position.y = 120;
+    // // ring.mesh.scale.set(3, 3, 3);
+    // scene.add(ring.mesh);
+}
 var AirPlane = function() {
 
     this.mesh = new THREE.Object3D();
@@ -233,7 +349,6 @@ var AirPlane = function() {
     this.propeller.position.set(50,0,0);
     this.mesh.add(this.propeller);
 };
-
 function createPlane() {
     airplane = new AirPlane();
     airplane.mesh.scale.set(0.25, 0.25, 0.25);
@@ -266,12 +381,6 @@ startWars = function() {
         scene.add( object );
     });
 }
-
-var mousePos = {
-    x: 0,
-    y: 0
-};
-
 function handleMouseMove(event) {
     var tx = (event.clientX / WIDTH) * 2 - 1;
     var ty = 1 - (event.clientY / HEIGHT) * 2;
@@ -280,7 +389,6 @@ function handleMouseMove(event) {
         y: ty
     };
 }
-
 function normalize(v, vmin, vmax, tmin, tmax) {
     var nv = Math.min(v, vmax);
     nv = Math.max(nv, vmin);
@@ -289,7 +397,6 @@ function normalize(v, vmin, vmax, tmin, tmax) {
     var dt = tmax - tmin;
     return dt * pc + tmin;
 }
-
 function updatePlane() {
     var targetX = normalize(mousePos.x, -1, 1, -100, 100);
     var targetY = normalize(mousePos.y, -1, 1, 25, 175);
@@ -301,15 +408,42 @@ function updatePlane() {
     camera.position.z = 150 + targetX / 3;
     // plane.propeller.rotation.x += 0.3;
 }
+var dist = 0;
 
+function updateTime() {
+    var curTime = new Date().getTime();
+    var oldTime = game.time;
+    var deltaTime = curTime - oldTime;
+    dist += 0.01 * game.speed * deltaTime;
+    dist = Math.round(dist);
+    game.time = curTime;
+}
+
+function updateDistance() {
+    dist++;
+    distanceElem.innerHTML = dist;
+}
+
+function addRings() {
+    if (dist % 100 == 0) {
+        ringSet.spawnRings();
+    }
+}
 function loop() {
     // airplane.propeller.rotation.x += 0.3;
     // sea.mesh.rotation.z += 0.005;
-    sky.mesh.rotation.z += 0.01;
+    // sky.mesh.rotation.z += 0.01;
     sea.moveWaves();
+    requestAnimationFrame(loop);
+    sky.mesh.rotation.z += game.speed * 0.0005;
+    sea.moveWaves();
+    ringSet.update();
     if(window.plane){
         updatePlane();
     }
+    updateTime();
+    updateDistance();
+    addRings();
     renderer.render(scene, camera);
     requestAnimationFrame(loop);
 }
