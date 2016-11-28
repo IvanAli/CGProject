@@ -253,7 +253,7 @@ RingSet.prototype.update = function() {
 			// console.log('player y: ' + targetY);
 			console.log('ring y: ' + ring.mesh.position.y);
 		}
-		if (targetY >= ring.mesh.position.y - ring.radius * 10 && targetY <= ring.mesh.position.y + ring.radius * 10) {
+		if (targetY >= ring.mesh.position.y - ring.radius && targetY <= ring.mesh.position.y + ring.radius) {
 			if (ring.mesh.position.x >= -5 && ring.mesh.position.x <= 5) {
 				ring.delete = true;
 			}
