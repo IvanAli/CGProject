@@ -1,11 +1,22 @@
+var states = {
+	playing: 0,
+	start: 1,
+	end: 2
+};
+
 var game = {
 	speed: 20,
 	difficulty: 1,
 	seaRadius: 600,
-	time: 0,
+	time: new Date().getTime(),
 	score: 0,
 	goodRings: 0,
+	state: states.playing
 };
+
+var ringsNumberElem = document.getElementById('ringsNumber');
+var distanceElem = document.getElementById('distance');
+
 var Colors = {
 	red: 0xf25346,
 	white: 0xf8d0d1,
@@ -14,6 +25,7 @@ var Colors = {
 	brownDark: 0x23190f,
 	blue: 0x68c3c0,
 };
+
 window.addEventListener('load', init, false);
 function init() {
 	createScene();
@@ -99,7 +111,7 @@ Sea = function() {
 			z: v.z,
 			angle: Math.random() * Math.PI * 2,
 			dist: 5 + Math.random() * 15,
-			speed: 0.016 + Math.random() * 0.03
+			speed: game.speed * 0.0008 + Math.random() * 0.03
 		});
 	}
 	var mat = new THREE.MeshPhongMaterial({
@@ -122,7 +134,7 @@ Sea.prototype.moveWaves = function() {
 		vp.angle += vp.speed;
 	}
 	this.mesh.geometry.verticesNeedUpdate = true;
-	sea.mesh.rotation.z += 0.005;
+	sea.mesh.rotation.z += game.speed * 0.00025;
 }
 var sea;
 function createSea() {
@@ -175,7 +187,8 @@ function createSky() {
 	scene.add(sky.mesh);
 }
 Ring = function(r) {
-	var geom = new THREE.RingGeometry(20, 22, 50);
+	console.log('RADI:' + r);
+	var geom = new THREE.RingGeometry(r, r + 6, 50, 20);
 	geom.applyMatrix(new THREE.Matrix4().makeRotationY(Math.PI / 2 - 0.2));
 	var mat = new THREE.MeshPhongMaterial({
 		color: 0xffff00,
@@ -195,11 +208,11 @@ RingSet = function(n) {
 	this.nextRings = [];
 	this.mesh = new THREE.Object3D();
 	for (var i = 0; i < n; i++) {
-		var r = Math.random() * 2;
+		var r = Math.random() * 25 + 10;
 		var ring = new Ring(r);
 		// var s = Math.random() * 2;
 		// s = Math.max(s, 1.2);
-		ring.mesh.scale.set(r, r, r);
+		// ring.mesh.scale.set(r, r, r);
 		this.nextRings.push(ring);
 	}
 }
@@ -209,7 +222,7 @@ RingSet.prototype.spawnRings = function() {
 	for (var i = 0; i < n; i++) {
 		var ring;
 		if (!this.nextRings.length) {
-			for (var j = 0; j < 20; j++) this.nextRings.push(new Ring());
+			for (var j = 0; j < 20; j++) this.nextRings.push(new Ring(Math.random() * 25 + 10));
 		}
 		ring = this.nextRings.pop();
 		this.mesh.add(ring.mesh);
@@ -220,12 +233,17 @@ RingSet.prototype.spawnRings = function() {
 		ring.mesh.position.y = Math.sin(ring.angle) * ring.dist;
 	}
 }
+function updateRingScore(n) {
+	game.goodRings += n;
+	ringsNumberElem.innerHTML = game.goodRings;
+}
+
 RingSet.prototype.update = function() {
 	var n = this.currentRings.length;
 	for (var i = 0; i < n; i++) {
 		var ring = this.currentRings[i];
 		if (!ring) continue;
-		ring.angle += Math.random() * 0.04;
+		ring.angle += Math.random() * game.speed * 0.002;
 		ring.mesh.position.x = Math.cos(ring.angle) * ring.dist;
 		ring.mesh.position.y = Math.sin(ring.angle) * ring.dist;
 		ring.mesh.rotation.x += 0.02;
@@ -250,14 +268,17 @@ RingSet.prototype.update = function() {
 			return false;
 		}
 		if (ring.delete && bad(ring)) {
-			this.nextRings.unshift(this.currentRings.splice(i,1)[0]);
+			ring.delete = false;
+			// this.nextRings.unshift(this.currentRings.splice(i,1)[0]);
+			this.currentRings.splice(i, 1);
 			this.mesh.remove(ring.mesh);
 			i--;
+			updateRingScore(1);
 			continue;
 		}
 		// check if it's out of the screen
 		if (ring.angle > Math.PI) {
-			this.nextRings.unshift(this.currentRings.splice(i,1)[0]);
+			this.currentRings.splice(i, 1);
 			// this.currentRings.splice(i, 1);
 			this.mesh.remove(ring.mesh);
 			i--;
@@ -362,12 +383,24 @@ function updatePlane() {
 	airplane.mesh.rotation.x = (airplane.mesh.position.y - targetY) * 0.006;
 	airplane.mesh.position.y += (targetY - airplane.mesh.position.y) * 0.1;
 	camera.position.z = 150 + targetX / 3;
-	airplane.propeller.rotation.x += 0.3;
+	airplane.propeller.rotation.x += game.speed * 0.015;
 }
 var dist = 0;
+
+function updateTime() {
+	var curTime = new Date().getTime();
+	var oldTime = game.time;
+	var deltaTime = curTime - oldTime;
+	dist += 0.01 * game.speed * deltaTime;
+	dist = Math.round(dist);
+	game.time = curTime;
+}
+
 function updateDistance() {
 	dist++;
+	distanceElem.innerHTML = dist;
 }
+
 function addRings() {
 	if (dist % 100 == 0) {
 		ringSet.spawnRings();
@@ -376,10 +409,11 @@ function addRings() {
 function loop() {
 	// airplane.propeller.rotation.x += 0.3;
 	// sea.mesh.rotation.z += 0.005;
-	sky.mesh.rotation.z += 0.01;
+	sky.mesh.rotation.z += game.speed * 0.0005;
 	sea.moveWaves();
 	ringSet.update();
 	updatePlane();
+	updateTime();
 	updateDistance();
 	addRings();
 	renderer.render(scene, camera);

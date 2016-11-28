@@ -8,11 +8,27 @@
 			overflow: hidden;
 			background: linear-gradient(#f4e0ba, #e7d9aa);
 		}
+		#score {
+			position: absolute;
+			color: red
+		}
+		#stats {
+			position: absolute;
+			float: right;
+			right: 50px;
+		}
 	</style>
-		<script type="text/javascript" src="js/three.min.js"></script>
-		<script type="text/javascript" src="js/game.js" /></script>
+
 </head>
 <body>
 	<div id="world"></div>
+	<div id="score">
+		Rings cleared: <div id="ringsNumber">0</div>
+	</div>
+	<div id="stats">
+		Distance traveled: <div id="distance">0</div>
+	</div>
+	<script type="text/javascript" src="js/three.min.js"></script>
+	<script type="text/javascript" src="js/game.js" /></script>
 </body>
 </html>
