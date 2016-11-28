@@ -118,10 +118,8 @@ var Colors = {
 	}
 	Cloud = function() {
 		this.mesh = new THREE.Object3D();
-		var geom = new THREE.BoxGeometry(20, 20, 20);
-		var mat = new THREE.MeshPhongMaterial({
-			colors: Colors.white
-		});
+		var geom = new THREE.TetrahedronGeometry(50,2);
+		var mat = new THREE.MeshBasicMaterial( {color: 0x808080 } );
 		var nBlocs = 3 + Math.floor(Math.random() * 3);
 		for (var i = 0; i < nBlocs; i++) {
 			var m = new THREE.Mesh(geom, mat);
