@@ -185,6 +185,7 @@ Ring = function(r) {
 	this.angle = 0;
 	this.dist = 0;
 	this.radius = r;
+	this.delete = false;
 	this.mesh = new THREE.Mesh(geom, mat);
 	this.mesh.receiveShadow = true;
 }
@@ -227,6 +228,7 @@ RingSet.prototype.update = function() {
 		ring.angle += Math.random() * 0.04;
 		ring.mesh.position.x = Math.cos(ring.angle) * ring.dist;
 		ring.mesh.position.y = Math.sin(ring.angle) * ring.dist;
+		ring.mesh.rotation.x += 0.02;
 		// check if the plane has passed to a ring
 		var targetX = normalize(mousePos.x, -1, 1, -100, 100);
 		var targetY = normalize(mousePos.y, -1, 1, 25, 175);
@@ -237,12 +239,21 @@ RingSet.prototype.update = function() {
 		}
 		if (targetY >= ring.mesh.position.y - ring.radius * 10 && targetY <= ring.mesh.position.y + ring.radius * 10) {
 			if (ring.mesh.position.x >= -5 && ring.mesh.position.x <= 5) {
-				console.log('player x: ' + targetX);
-				console.log('ring x: ' + ring.mesh.position.x);
-				this.nextRings.unshift(this.currentRings.splice(i,1)[0]);
-				this.mesh.remove(ring.mesh);
-				i--;
+				ring.delete = true;
 			}
+		}
+		bad = function(ring) {
+			ring.mesh.scale.x -= 0.1;
+			ring.mesh.scale.y -= 0.1;
+			ring.mesh.scale.z -= 0.1;
+			if (ring.mesh.scale.x < 0 && ring.mesh.scale.y < 0 && ring.mesh.scale.z < 0) return true;
+			return false;
+		}
+		if (ring.delete && bad(ring)) {
+			this.nextRings.unshift(this.currentRings.splice(i,1)[0]);
+			this.mesh.remove(ring.mesh);
+			i--;
+			continue;
 		}
 		// check if it's out of the screen
 		if (ring.angle > Math.PI) {
