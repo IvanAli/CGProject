@@ -17,7 +17,7 @@ var game = {
 var worldElem = document.getElementById('world');
 var ringsNumberElem = document.getElementById('ringsNumber');
 var distanceElem = document.getElementById('distance');
-var redcolor = 140, greencolor = 240, bluecolor = 220;
+var redcolor = 140, greencolor = 160, bluecolor = 220;
 
 var Colors = {
 	red: 0xf25346,
@@ -37,6 +37,7 @@ function init() {
 	createSky();
 	createRings();
 	createBullets();
+	createStars();
 	document.addEventListener('mousemove', handleMouseMove, false);
 	document.addEventListener('mousedown', handleMouseDown, false);
 	loop();
@@ -363,6 +364,63 @@ function createPlane() {
 	airplane.mesh.position.y = 100;
 	scene.add(airplane.mesh);
 }
+Star = function() {
+	var geom = new THREE.OctahedronGeometry(8);
+	var mat = new THREE.MeshPhongMaterial({
+	    color: 0xf0ea99,
+	    shininess: 0,
+	    specular: 0xffffff,
+		opacity: 0.5,
+	    shading: THREE.FlatShading
+	});
+	this.angle = 0;
+	this.dist = 0;
+	this.mesh = new THREE.Mesh(geom, mat);
+}
+
+StarSet = function() {
+	this.mesh = new THREE.Object3D();
+	this.currentStars = [];
+}
+
+StarSet.prototype.spawnStars = function(n) {
+	for (var i = 0; i < n; i++) {
+		var star = new Star();
+		var angle = Math.random() * Math.PI * 2;
+		var h = Math.random() * 200 + 750;
+		star.mesh.position.x = Math.cos(angle) * h;
+		star.mesh.position.y = Math.sin(angle) * h;
+		star.mesh.rotation.z = angle + Math.PI / 2;
+		star.dist = Math.random() * 250 + 600;
+		star.mesh.position.z = -400 - Math.random() * 400;
+		this.currentStars.push(star);
+		this.mesh.add(star.mesh);
+	}
+}
+
+StarSet.prototype.update = function() {
+	var n = this.currentStars.length;
+	for (var i = 0; i < this.currentStars.length; i++) {
+		var star = this.currentStars[i];
+		star.angle += 0.005 * game.speed * Math.random() * 0.5;
+		star.mesh.position.x = Math.cos(star.angle) * star.dist;
+		star.mesh.position.y = Math.sin(star.angle) * star.dist;
+		if (star.angle > Math.PI) {
+			this.currentStars.splice(i, 1);
+			this.mesh.remove(star.mesh);
+			i--;
+		}
+	}
+}
+
+var starSet;
+
+function createStars() {
+	starSet = new StarSet();
+	starSet.mesh.position.y = -500;
+	scene.add(starSet.mesh);
+}
+
 Bullet = function() {
 	var geom = new THREE.TetrahedronGeometry(4);
 	var mat = new THREE.MeshPhongMaterial({
@@ -396,6 +454,7 @@ BulletSet.prototype.update = function() {
 		bullet.mesh.rotation.x += 0.03;
 		if (bullet.mesh.position.x > WIDTH) {
 			this.currentBullets.splice(i, 1);
+			this.mesh.remove(bullet.mesh);
 			i--;
 		}
 	}
@@ -491,13 +550,14 @@ function loop() {
 	sea.moveWaves();
 	ringSet.update();
 	bulletSet.update();
+	starSet.update();
 	updatePlane();
 	updateTime();
 	updateDistance();
 	addRings();
 	// console.log('background color: ' + worldElem.style.backgroundColor);
 	colori++;
-	if (Math.min(redcolor, Math.min(greencolor, bluecolor)) < 0) {
+	if (Math.max(redcolor, Math.max(greencolor, bluecolor)) < 0) {
 		sign *= -1;
 	}
 	if (Math.max(redcolor, Math.max(greencolor, bluecolor)) > 255) {
@@ -505,6 +565,7 @@ function loop() {
 	}
 	if (colori % 5 == 0) {
 		redcolor += sign, greencolor += sign, bluecolor += sign;
+		if (colori % 20 == 0 && Math.min(redcolor, Math.min(greencolor, bluecolor)) < 50) starSet.spawnStars(3);
 		worldElem.style.backgroundColor = "rgb(" + redcolor + ", " + greencolor + ", " + bluecolor + ")";
 	}
 	gradientTop = 0xffffff;
