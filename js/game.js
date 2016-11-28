@@ -17,6 +17,7 @@ var game = {
 var worldElem = document.getElementById('world');
 var ringsNumberElem = document.getElementById('ringsNumber');
 var distanceElem = document.getElementById('distance');
+var redcolor = 140, greencolor = 240, bluecolor = 220;
 
 var Colors = {
 	red: 0xf25346,
@@ -409,6 +410,9 @@ function addRings() {
 var gradientTop = 0xf4e0ba;
 var gradientBottom = 0xe7d9aa;
 
+var colori = 0;
+var sign = -1;
+
 function loop() {
 	// airplane.propeller.rotation.x += 0.3;
 	// sea.mesh.rotation.z += 0.005;
@@ -419,8 +423,18 @@ function loop() {
 	updateTime();
 	updateDistance();
 	addRings();
-	console.log('background color: ' + worldElem.style.backgroundColor);
-	worldElem.style.backgroundColor = gradientTop;
+	// console.log('background color: ' + worldElem.style.backgroundColor);
+	colori++;
+	if (Math.min(redcolor, Math.min(greencolor, bluecolor)) < 0) {
+		sign *= -1;
+	}
+	if (Math.max(redcolor, Math.max(greencolor, bluecolor)) > 255) {
+		sign *= -1;
+	}
+	if (colori % 5 == 0) {
+		redcolor += sign, greencolor += sign, bluecolor += sign;
+		worldElem.style.backgroundColor = "rgb(" + redcolor + ", " + greencolor + ", " + bluecolor + ")";
+	}
 	gradientTop = 0xffffff;
 	renderer.render(scene, camera);
 	requestAnimationFrame(loop);
