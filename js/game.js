@@ -247,6 +247,7 @@ EnnemiesHolder.prototype.rotateEnnemies = function(){
   for (var i=0; i<n; i++){
 
     var ennemy = this.ennemiesInUse[i];
+    if (!ennemy) continue;
     ennemy.angle += Math.random() * game.speed * 0.002;
 
     if (ennemy.angle > Math.PI*2) ennemy.angle -= Math.PI*2;
@@ -256,25 +257,29 @@ EnnemiesHolder.prototype.rotateEnnemies = function(){
     ennemy.mesh.rotation.z += Math.random()*.1;
     ennemy.mesh.rotation.y += Math.random()*.1;
 
-    //var globalEnnemyPosition =  ennemy.mesh.localToWorld(new THREE.Vector3());
-    /*var diffPos = airplane.mesh.position.clone().sub(ennemy.mesh.position.clone());
+    var globalEnnemyPosition =  ennemy.mesh.localToWorld(new THREE.Vector3());
+    var diffPos = airplane.mesh.position.clone().sub(ennemy.mesh.position.clone());
+    var bullpos = bulletSet.mesh.position.clone().sub(ennemy.mesh.position.clone());
+    var bull_d = bullpos.length();
     var d = diffPos.length();
-    if (d<three.ennemyDistanceTolerance){
-      particlesHolder.spawnParticles(ennemy.mesh.position.clone(), 15, Colors.red, 3);
+    console.log('SHOT: '+ bull_d);
+    if (d<10){
 
       ennemiesPool.unshift(this.ennemiesInUse.splice(i,1)[0]);
       this.mesh.remove(ennemy.mesh);
-      three.planeCollisionSpeedX = 100 * diffPos.x / d;
-      three.planeCollisionSpeedY = 100 * diffPos.y / d;
-      ambientLight.intensity = 2;
 
-      removeEnergy();
       i--;
+    }else if(bull_d<100){
+
+      ennemiesPool.unshift(this.ennemiesInUse.splice(i,1)[0]);
+      this.mesh.remove(ennemy.mesh);
+      i--;
+
     }else if (ennemy.angle > Math.PI){
       ennemiesPool.unshift(this.ennemiesInUse.splice(i,1)[0]);
       this.mesh.remove(ennemy.mesh);
       i--;
-    }*/
+    }
   }
 }
 function createEnnemies(){
