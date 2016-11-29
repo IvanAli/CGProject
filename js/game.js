@@ -3,6 +3,7 @@ var states = {
 	start: 1,
 	end: 2
 };
+var ennemiesPool = [];
 
 var game = {
 	speed: 20,
@@ -36,6 +37,7 @@ function init() {
 	createSea();
 	createSky();
 	createRings();
+	createEnnemies();
 	createBullets();
 	createStars();
 	document.addEventListener('mousemove', handleMouseMove, false);
@@ -189,8 +191,102 @@ function createSky() {
 	sky.mesh.position.y = -600;
 	scene.add(sky.mesh);
 }
+
+Ennemy = function(){
+  var geom = new THREE.TetrahedronGeometry(8,2);
+  var mat = new THREE.MeshPhongMaterial({
+    color:Colors.red,
+    shininess:0,
+    specular:0xffffff,
+    shading:THREE.FlatShading
+  });
+  this.mesh = new THREE.Mesh(geom,mat);
+  this.mesh.castShadow = true;
+  this.angle = 0;
+  this.dist = 0;
+}
+var enemySet;
+EnnemiesHolder = function (n){
+  
+  this.mesh = new THREE.Object3D();
+  this.ennemiesInUse = [];
+  /*
+  this.currentEnnemies = [];
+  this.nextEnnemies = [];
+  this.mesh = new THREE.Object3D();
+  for (var i = 0; i < n; i++) {
+		var ennemy = new Ennemy();
+		// var s = Math.random() * 2;
+		// s = Math.max(s, 1.2);
+		// ring.mesh.scale.set(r, r, r);
+		this.nextEnnemies.push(ennemy);
+	}*/
+}
+EnnemiesHolder.prototype.spawnEnnemies = function(){
+  var nEnnemies = Math.floor(Math.random()) * 10 + 1;
+  var radius = cylinderRadius * Math.max(Math.random() - 0.6, Math.random() * 0.2 + 0.1);
+  for (var i=0; i<nEnnemies; i++){
+    var ennemy;
+     if (ennemiesPool.length) {
+      ennemy = ennemiesPool.pop();
+    }else{
+      ennemy = new Ennemy();
+    }
+    //ennemy = this.nextEnnemies.pop();
+	this.mesh.add(ennemy.mesh);
+    this.ennemiesInUse.push(ennemy);
+    ennemy.angle = - (0.06);
+    ennemy.distance = radius;
+    ennemy.mesh.position.y = Math.sin(ennemy.angle)*ennemy.distance;
+    ennemy.mesh.position.x = Math.cos(ennemy.angle)*ennemy.distance;
+  }
+}
+EnnemiesHolder.prototype.rotateEnnemies = function(){
+
+	var n = this.ennemiesInUse.length;
+  for (var i=0; i<n; i++){
+
+    var ennemy = this.ennemiesInUse[i];
+    ennemy.angle += Math.random() * game.speed * 0.002;
+
+    if (ennemy.angle > Math.PI*2) ennemy.angle -= Math.PI*2;
+
+    ennemy.mesh.position.y = Math.sin(ennemy.angle)*ennemy.distance;
+    ennemy.mesh.position.x = Math.cos(ennemy.angle)*ennemy.distance;
+    ennemy.mesh.rotation.z += Math.random()*.1;
+    ennemy.mesh.rotation.y += Math.random()*.1;
+
+    //var globalEnnemyPosition =  ennemy.mesh.localToWorld(new THREE.Vector3());
+    /*var diffPos = airplane.mesh.position.clone().sub(ennemy.mesh.position.clone());
+    var d = diffPos.length();
+    if (d<three.ennemyDistanceTolerance){
+      particlesHolder.spawnParticles(ennemy.mesh.position.clone(), 15, Colors.red, 3);
+
+      ennemiesPool.unshift(this.ennemiesInUse.splice(i,1)[0]);
+      this.mesh.remove(ennemy.mesh);
+      three.planeCollisionSpeedX = 100 * diffPos.x / d;
+      three.planeCollisionSpeedY = 100 * diffPos.y / d;
+      ambientLight.intensity = 2;
+
+      removeEnergy();
+      i--;
+    }else if (ennemy.angle > Math.PI){
+      ennemiesPool.unshift(this.ennemiesInUse.splice(i,1)[0]);
+      this.mesh.remove(ennemy.mesh);
+      i--;
+    }*/
+  }
+}
+function createEnnemies(){
+	for (var i=0; i<10; i++){
+    var ennemy = new Ennemy();
+    ennemiesPool.push(ennemy);
+  }
+  ennemiesHolder = new EnnemiesHolder();
+  //ennemiesHolder.mesh.position.y = -three.seaRadius;
+  scene.add(ennemiesHolder.mesh);
+}
 Ring = function(r) {
-	// console.log('RADI:' + r);
 	var geom = new THREE.TorusGeometry(r, 1, 16, 100);
 	geom.applyMatrix(new THREE.Matrix4().makeRotationY(Math.PI / 2 - 0.2));
 	var mat = new THREE.MeshPhongMaterial({
@@ -261,7 +357,6 @@ RingSet.prototype.update = function() {
 		// check if the plane has passed to a ring
 		var targetX = normalize(mousePos.x, -1, 1, -100, 100);
 		var targetY = normalize(mousePos.y, -1, 1, 25, 175);
-		// console.log('player y: ' + targetY);
 		if (targetY >= ring.mesh.position.y - ring.radius && targetY <= ring.mesh.position.y + ring.radius) {
 			if (ring.mesh.position.x >= -5 && ring.mesh.position.x <= 5) {
 				ring.delete = true;
@@ -536,6 +631,11 @@ function addRings() {
 		ringSet.spawnRings();
 	}
 }
+function addEnnemies() {
+	if (dist % 100 == 0) {
+		ennemiesHolder.spawnEnnemies();
+	}
+}
 
 var gradientTop = 0xf4e0ba;
 var gradientBottom = 0xe7d9aa;
@@ -548,6 +648,7 @@ function loop() {
 	// sea.mesh.rotation.z += 0.005;
 	sky.mesh.rotation.z += game.speed * 0.0005;
 	sea.moveWaves();
+	ennemiesHolder.rotateEnnemies();
 	ringSet.update();
 	bulletSet.update();
 	starSet.update();
@@ -555,7 +656,7 @@ function loop() {
 	updateTime();
 	updateDistance();
 	addRings();
-	// console.log('background color: ' + worldElem.style.backgroundColor);
+	addEnnemies();
 	colori++;
 	if (Math.max(redcolor, Math.max(greencolor, bluecolor)) < 0) {
 		sign *= -1;
