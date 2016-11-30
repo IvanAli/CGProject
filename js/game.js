@@ -33,7 +33,7 @@ window.addEventListener('load', init, false);
 function init() {
     createScene();
     createLights();
-    createPlane();
+    // createPlane();
     createSea();
     createSky();
     createRings();
@@ -259,7 +259,7 @@ EnnemiesHolder.prototype.rotateEnnemies = function(){
         ennemy.mesh.rotation.y += Math.random()*.1;
 
         var globalEnnemyPosition =  ennemy.mesh.localToWorld(new THREE.Vector3());
-        var diffPos = airplane.mesh.position.clone().sub(ennemy.mesh.position.clone());
+        var diffPos = plane.position.clone().sub(ennemy.mesh.position.clone());
         var bullpos = bulletSet.mesh.position.clone().sub(ennemy.mesh.position.clone());
         var bull_d = bullpos.length();
         var d = diffPos.length();
@@ -562,7 +562,7 @@ BulletSet.prototype.update = function() {
 }
 
 BulletSet.prototype.spawnBullets = function(n) {
-    console.log('rotation: ' + airplane.mesh.rotation.z);
+    // console.log('rotation: ' + airplane.mesh.rotation.z);
     for (var i = 0; i < n; i++) {
         var bullet = new Bullet();
         bullet.mesh.position.x = -5 + i * 20;
@@ -585,7 +585,8 @@ function createBullets() {
 
 function handleMouseMove(event) {
     var tx = (event.clientX / WIDTH) * 2 - 1;
-    var ty = 1 - (event.clientY / HEIGHT) * 2;
+
+var ty = 1 - (event.clientY / HEIGHT) * 2;
     mousePos = {
         x: tx,
         y: ty
@@ -610,11 +611,17 @@ function updatePlane() {
     var targetY = normalize(mousePos.y, -1, 1, 25, 175);
     // airplane.mesh.position.x = targetX;
     // airplane.mesh.position.y = targetY;
-    airplane.mesh.rotation.z = (targetY - airplane.mesh.position.y) * 0.0128;
-    airplane.mesh.rotation.x = (airplane.mesh.position.y - targetY) * 0.006;
-    airplane.mesh.position.y += (targetY - airplane.mesh.position.y) * 0.1;
+    // airplane.mesh.rotation.z = (targetY - airplane.mesh.position.y) * 0.0128;
+    // airplane.mesh.rotation.x = (airplane.mesh.position.y - targetY) * 0.006;
+    // airplane.mesh.position.y += (targetY - airplane.mesh.position.y) * 0.1;
     camera.position.z = 150 + targetX / 3;
-    airplane.propeller.rotation.x += game.speed * 0.015;
+    // airplane.propeller.rotation.x += game.speed * 0.015;
+    if(window.plane){
+        plane.propellers.rotation.x += game.speed * 0.015;
+        plane.rotation.z = -(targetY - plane.position.y) * 0.0128;
+        plane.rotation.x = (plane.position.y - targetY) * 0.006;
+        plane.position.y += (targetY - plane.position.y) * 0.1;
+    }
 }
 var dist = 0;
 
@@ -651,18 +658,23 @@ starWars = function() {
         console.log( item, loaded, total );
     };
     var loader = new THREE.OBJLoader(manager);
-    loader.load( 'spaceship/toyPlane.obj', function ( object ) {
+    loader.load( 'spaceship/toyPlane2.obj', function ( object ) {
         object.traverse( function ( child ) {
             if ( child instanceof THREE.Mesh ) {
                 // child.material.map = texture;
                 child.scale.set(5, 5, 5);
                 child.castShadow = true;
                 child.receiveShadow = true;
+                console.log(child.material.name);
+                child.material = new THREE.MeshPhongMaterial({name:child.material.name, color:Colors.red, shading:THREE.FlatShading});
+                if(child.material.name == 'blades'){
+                    object.propellers = child;
+                    child.material =  new THREE.MeshPhongMaterial({name:child.material.name, color:Colors.brownDark, shading:THREE.FlatShading});
+                }
             }
         } );
         object.position.y = 100;
         object.castShadow = true;
-        // object.position.z =  -10;
         object.rotation.y = -180 * Math.PI / 180;
         window.plane = object;
         scene.add( object );
