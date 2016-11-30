@@ -12,12 +12,14 @@ var game = {
     time: new Date().getTime(),
     score: 0,
     goodRings: 0,
+    life:3,
     state: states.playing
 };
 
 var worldElem = document.getElementById('world');
 var ringsNumberElem = document.getElementById('ringsNumber');
 var distanceElem = document.getElementById('distance');
+var livesElem = document.getElementById('lives');
 var redcolor = 140, greencolor = 160, bluecolor = 220;
 
 var Colors = {
@@ -234,6 +236,7 @@ EnnemiesHolder.prototype.spawnEnnemies = function(){
             ennemy = new Ennemy();
         }
         //ennemy = this.nextEnnemies.pop();
+        if (!ennemy) continue;
         this.mesh.add(ennemy.mesh);
         this.ennemiesInUse.push(ennemy);
         ennemy.angle = - (0.06);
@@ -260,22 +263,31 @@ EnnemiesHolder.prototype.rotateEnnemies = function(){
 
         var globalEnnemyPosition =  ennemy.mesh.localToWorld(new THREE.Vector3());
         var diffPos = plane.position.clone().sub(ennemy.mesh.position.clone());
-        var bullpos = bulletSet.mesh.position.clone().sub(ennemy.mesh.position.clone());
-        var bull_d = bullpos.length();
+        
+        for (var j = 0; j < bulletSet.currentBullets.length; j++) {
+        	var bullet = bulletSet.currentBullets[j];
+        	if (!bullet) continue;
+        	var bullpos = bullet.mesh.position.clone().sub(ennemy.mesh.position.clone());
+        	var bull_d = bullpos.length();
+        	if(bull_d<10){
+
+	            ennemiesPool.unshift(this.ennemiesInUse.splice(i,1)[0]);
+	            this.mesh.remove(ennemy.mesh);
+	            i--;
+
+	        }
+        }
+    
         var d = diffPos.length();
-        // console.log('SHOT: '+ bull_d);
+        //console.log('SHOT: '+ bulletSet.mesh.position.y);
         if (d<10){
 
             ennemiesPool.unshift(this.ennemiesInUse.splice(i,1)[0]);
             this.mesh.remove(ennemy.mesh);
-
+            game.life--;
+            livesElem.innerHTML=game.life;
+            if (game.life < 0) game.state = states.end;
             i--;
-        }else if(bull_d<100){
-
-            ennemiesPool.unshift(this.ennemiesInUse.splice(i,1)[0]);
-            this.mesh.remove(ennemy.mesh);
-            i--;
-
         }else if (ennemy.angle > Math.PI){
             ennemiesPool.unshift(this.ennemiesInUse.splice(i,1)[0]);
             this.mesh.remove(ennemy.mesh);
@@ -576,6 +588,13 @@ function addRings() {
 function addEnnemies() {
     if (dist % 100 == 0) {
         ennemiesHolder.spawnEnnemies();
+        game.speed+=2;
+    }
+    if(dist % 250 ==0){
+    	modulus--;
+    	if(modulus < 1){
+    		modulus=1;
+    	}
     }
 }
 
@@ -616,10 +635,15 @@ var gradientBottom = 0xe7d9aa;
 
 var colori = 0;
 var sign = -1;
-
+var modulus = 6;
 function loop() {
     // airplane.propeller.rotation.x += 0.3;
     // sea.mesh.rotation.z += 0.005;
+    if (game.state == states.end) {
+    	alert('Game over. Your score is ' + game.goodRings + '. Your distance was ' + dist);
+    } else {
+
+
     sky.mesh.rotation.z += game.speed * 0.0005;
     sea.moveWaves();
     ennemiesHolder.rotateEnnemies();
@@ -646,4 +670,4 @@ function loop() {
     gradientTop = 0xffffff;
     renderer.render(scene, camera);
     requestAnimationFrame(loop);
-}
+}}
