@@ -39,6 +39,7 @@ function init() {
     createRings();
     createEnnemies();
     createBullets();
+    starWars();
     createStars();
     document.addEventListener('mousemove', handleMouseMove, false);
     document.addEventListener('mousedown', handleMouseDown, false);
@@ -193,103 +194,103 @@ function createSky() {
 }
 
 Ennemy = function(){
-  var geom = new THREE.TetrahedronGeometry(8,2);
-  var mat = new THREE.MeshPhongMaterial({
-    color:Colors.red,
-    shininess:0,
-    specular:0xffffff,
-    shading:THREE.FlatShading
-  });
-  this.mesh = new THREE.Mesh(geom,mat);
-  this.mesh.castShadow = true;
-  this.angle = 0;
-  this.dist = 0;
+    var geom = new THREE.TetrahedronGeometry(8,2);
+    var mat = new THREE.MeshPhongMaterial({
+        color:Colors.red,
+        shininess:0,
+        specular:0xffffff,
+        shading:THREE.FlatShading
+    });
+    this.mesh = new THREE.Mesh(geom,mat);
+    this.mesh.castShadow = true;
+    this.angle = 0;
+    this.dist = 0;
 }
 var enemySet;
 EnnemiesHolder = function (n){
-  
-  this.mesh = new THREE.Object3D();
-  this.ennemiesInUse = [];
-  /*
-  this.currentEnnemies = [];
-  this.nextEnnemies = [];
-  this.mesh = new THREE.Object3D();
-  for (var i = 0; i < n; i++) {
-        var ennemy = new Ennemy();
-        // var s = Math.random() * 2;
-        // s = Math.max(s, 1.2);
-        // ring.mesh.scale.set(r, r, r);
-        this.nextEnnemies.push(ennemy);
-    }*/
+
+    this.mesh = new THREE.Object3D();
+    this.ennemiesInUse = [];
+    /*
+      this.currentEnnemies = [];
+      this.nextEnnemies = [];
+      this.mesh = new THREE.Object3D();
+      for (var i = 0; i < n; i++) {
+      var ennemy = new Ennemy();
+      // var s = Math.random() * 2;
+      // s = Math.max(s, 1.2);
+      // ring.mesh.scale.set(r, r, r);
+      this.nextEnnemies.push(ennemy);
+      }*/
 }
 EnnemiesHolder.prototype.spawnEnnemies = function(){
-  var nEnnemies = Math.floor(Math.random()) * 10 + 1;
-  var radius = cylinderRadius * Math.max(Math.random() - 0.6, Math.random() * 0.2 + 0.1);
-  for (var i=0; i<nEnnemies; i++){
-    var ennemy;
-     if (ennemiesPool.length) {
-      ennemy = ennemiesPool.pop();
-    }else{
-      ennemy = new Ennemy();
+    var nEnnemies = Math.floor(Math.random()) * 10 + 1;
+    var radius = cylinderRadius * Math.max(Math.random() - 0.6, Math.random() * 0.2 + 0.1);
+    for (var i=0; i<nEnnemies; i++){
+        var ennemy;
+        if (ennemiesPool.length) {
+            ennemy = ennemiesPool.pop();
+        }else{
+            ennemy = new Ennemy();
+        }
+        //ennemy = this.nextEnnemies.pop();
+        this.mesh.add(ennemy.mesh);
+        this.ennemiesInUse.push(ennemy);
+        ennemy.angle = - (0.06);
+        ennemy.distance = radius;
+        ennemy.mesh.position.y = Math.sin(ennemy.angle)*ennemy.distance;
+        ennemy.mesh.position.x = Math.cos(ennemy.angle)*ennemy.distance;
     }
-    //ennemy = this.nextEnnemies.pop();
-    this.mesh.add(ennemy.mesh);
-    this.ennemiesInUse.push(ennemy);
-    ennemy.angle = - (0.06);
-    ennemy.distance = radius;
-    ennemy.mesh.position.y = Math.sin(ennemy.angle)*ennemy.distance;
-    ennemy.mesh.position.x = Math.cos(ennemy.angle)*ennemy.distance;
-  }
 }
 EnnemiesHolder.prototype.rotateEnnemies = function(){
 
     var n = this.ennemiesInUse.length;
-  for (var i=0; i<n; i++){
+    for (var i=0; i<n; i++){
 
-    var ennemy = this.ennemiesInUse[i];
-    if (!ennemy) continue;
-    ennemy.angle += Math.random() * game.speed * 0.002;
+        var ennemy = this.ennemiesInUse[i];
+        if (!ennemy) continue;
+        ennemy.angle += Math.random() * game.speed * 0.002;
 
-    if (ennemy.angle > Math.PI*2) ennemy.angle -= Math.PI*2;
+        if (ennemy.angle > Math.PI*2) ennemy.angle -= Math.PI*2;
 
-    ennemy.mesh.position.y = Math.sin(ennemy.angle)*ennemy.distance;
-    ennemy.mesh.position.x = Math.cos(ennemy.angle)*ennemy.distance;
-    ennemy.mesh.rotation.z += Math.random()*.1;
-    ennemy.mesh.rotation.y += Math.random()*.1;
+        ennemy.mesh.position.y = Math.sin(ennemy.angle)*ennemy.distance;
+        ennemy.mesh.position.x = Math.cos(ennemy.angle)*ennemy.distance;
+        ennemy.mesh.rotation.z += Math.random()*.1;
+        ennemy.mesh.rotation.y += Math.random()*.1;
 
-    var globalEnnemyPosition =  ennemy.mesh.localToWorld(new THREE.Vector3());
-    var diffPos = airplane.mesh.position.clone().sub(ennemy.mesh.position.clone());
-    var bullpos = bulletSet.mesh.position.clone().sub(ennemy.mesh.position.clone());
-    var bull_d = bullpos.length();
-    var d = diffPos.length();
-    console.log('SHOT: '+ bull_d);
-    if (d<10){
+        var globalEnnemyPosition =  ennemy.mesh.localToWorld(new THREE.Vector3());
+        var diffPos = airplane.mesh.position.clone().sub(ennemy.mesh.position.clone());
+        var bullpos = bulletSet.mesh.position.clone().sub(ennemy.mesh.position.clone());
+        var bull_d = bullpos.length();
+        var d = diffPos.length();
+        console.log('SHOT: '+ bull_d);
+        if (d<10){
 
-      ennemiesPool.unshift(this.ennemiesInUse.splice(i,1)[0]);
-      this.mesh.remove(ennemy.mesh);
+            ennemiesPool.unshift(this.ennemiesInUse.splice(i,1)[0]);
+            this.mesh.remove(ennemy.mesh);
 
-      i--;
-    }else if(bull_d<100){
+            i--;
+        }else if(bull_d<100){
 
-      ennemiesPool.unshift(this.ennemiesInUse.splice(i,1)[0]);
-      this.mesh.remove(ennemy.mesh);
-      i--;
+            ennemiesPool.unshift(this.ennemiesInUse.splice(i,1)[0]);
+            this.mesh.remove(ennemy.mesh);
+            i--;
 
-    }else if (ennemy.angle > Math.PI){
-      ennemiesPool.unshift(this.ennemiesInUse.splice(i,1)[0]);
-      this.mesh.remove(ennemy.mesh);
-      i--;
+        }else if (ennemy.angle > Math.PI){
+            ennemiesPool.unshift(this.ennemiesInUse.splice(i,1)[0]);
+            this.mesh.remove(ennemy.mesh);
+            i--;
+        }
     }
-  }
 }
 function createEnnemies(){
     for (var i=0; i<10; i++){
-    var ennemy = new Ennemy();
-    ennemiesPool.push(ennemy);
-  }
-  ennemiesHolder = new EnnemiesHolder();
-  //ennemiesHolder.mesh.position.y = -three.seaRadius;
-  scene.add(ennemiesHolder.mesh);
+        var ennemy = new Ennemy();
+        ennemiesPool.push(ennemy);
+    }
+    ennemiesHolder = new EnnemiesHolder();
+    //ennemiesHolder.mesh.position.y = -three.seaRadius;
+    scene.add(ennemiesHolder.mesh);
 }
 Ring = function(r) {
     var geom = new THREE.TorusGeometry(r, 1, 16, 100);
@@ -403,60 +404,60 @@ function createRings() {
 }
 var AirPlane = function() {
 
-this.mesh = new THREE.Object3D();
+    this.mesh = new THREE.Object3D();
 
-// Create the cabin
-var geomCockpit = new THREE.BoxGeometry(60,50,50,1,1,1);
-var matCockpit = new THREE.MeshPhongMaterial({color:Colors.red, shading:THREE.FlatShading});
-var cockpit = new THREE.Mesh(geomCockpit, matCockpit);
-cockpit.castShadow = true;
-cockpit.receiveShadow = true;
-this.mesh.add(cockpit);
+    // Create the cabin
+    var geomCockpit = new THREE.BoxGeometry(60,50,50,1,1,1);
+    var matCockpit = new THREE.MeshPhongMaterial({color:Colors.red, shading:THREE.FlatShading});
+    var cockpit = new THREE.Mesh(geomCockpit, matCockpit);
+    cockpit.castShadow = true;
+    cockpit.receiveShadow = true;
+    this.mesh.add(cockpit);
 
-// Create the engine
-var geomEngine = new THREE.BoxGeometry(20,50,50,1,1,1);
-var matEngine = new THREE.MeshPhongMaterial({color:Colors.white, shading:THREE.FlatShading});
-var engine = new THREE.Mesh(geomEngine, matEngine);
-engine.position.x = 40;
-engine.castShadow = true;
-engine.receiveShadow = true;
-this.mesh.add(engine);
+    // Create the engine
+    var geomEngine = new THREE.BoxGeometry(20,50,50,1,1,1);
+    var matEngine = new THREE.MeshPhongMaterial({color:Colors.white, shading:THREE.FlatShading});
+    var engine = new THREE.Mesh(geomEngine, matEngine);
+    engine.position.x = 40;
+    engine.castShadow = true;
+    engine.receiveShadow = true;
+    this.mesh.add(engine);
 
-// Create the tail
-var geomTailPlane = new THREE.BoxGeometry(15,20,5,1,1,1);
-var matTailPlane = new THREE.MeshPhongMaterial({color:Colors.red, shading:THREE.FlatShading});
-var tailPlane = new THREE.Mesh(geomTailPlane, matTailPlane);
-tailPlane.position.set(-35,25,0);
-tailPlane.castShadow = true;
-tailPlane.receiveShadow = true;
-this.mesh.add(tailPlane);
+    // Create the tail
+    var geomTailPlane = new THREE.BoxGeometry(15,20,5,1,1,1);
+    var matTailPlane = new THREE.MeshPhongMaterial({color:Colors.red, shading:THREE.FlatShading});
+    var tailPlane = new THREE.Mesh(geomTailPlane, matTailPlane);
+    tailPlane.position.set(-35,25,0);
+    tailPlane.castShadow = true;
+    tailPlane.receiveShadow = true;
+    this.mesh.add(tailPlane);
 
-// Create the wing
-var geomSideWing = new THREE.BoxGeometry(40,8,150,1,1,1);
-var matSideWing = new THREE.MeshPhongMaterial({color:Colors.red, shading:THREE.FlatShading});
-var sideWing = new THREE.Mesh(geomSideWing, matSideWing);
-sideWing.castShadow = true;
-sideWing.receiveShadow = true;
-this.mesh.add(sideWing);
+    // Create the wing
+    var geomSideWing = new THREE.BoxGeometry(40,8,150,1,1,1);
+    var matSideWing = new THREE.MeshPhongMaterial({color:Colors.red, shading:THREE.FlatShading});
+    var sideWing = new THREE.Mesh(geomSideWing, matSideWing);
+    sideWing.castShadow = true;
+    sideWing.receiveShadow = true;
+    this.mesh.add(sideWing);
 
-// propeller
-var geomPropeller = new THREE.BoxGeometry(20,10,10,1,1,1);
-var matPropeller = new THREE.MeshPhongMaterial({color:Colors.brown, shading:THREE.FlatShading});
-this.propeller = new THREE.Mesh(geomPropeller, matPropeller);
-this.propeller.castShadow = true;
-this.propeller.receiveShadow = true;
+    // propeller
+    var geomPropeller = new THREE.BoxGeometry(20,10,10,1,1,1);
+    var matPropeller = new THREE.MeshPhongMaterial({color:Colors.brown, shading:THREE.FlatShading});
+    this.propeller = new THREE.Mesh(geomPropeller, matPropeller);
+    this.propeller.castShadow = true;
+    this.propeller.receiveShadow = true;
 
-// blades
-var geomBlade = new THREE.BoxGeometry(1,100,20,1,1,1);
-var matBlade = new THREE.MeshPhongMaterial({color:Colors.brownDark, shading:THREE.FlatShading});
+    // blades
+    var geomBlade = new THREE.BoxGeometry(1,100,20,1,1,1);
+    var matBlade = new THREE.MeshPhongMaterial({color:Colors.brownDark, shading:THREE.FlatShading});
 
-var blade = new THREE.Mesh(geomBlade, matBlade);
-blade.position.set(8,0,0);
-blade.castShadow = true;
-blade.receiveShadow = true;
-this.propeller.add(blade);
-this.propeller.position.set(50,0,0);
-this.mesh.add(this.propeller);
+    var blade = new THREE.Mesh(geomBlade, matBlade);
+    blade.position.set(8,0,0);
+    blade.castShadow = true;
+    blade.receiveShadow = true;
+    this.propeller.add(blade);
+    this.propeller.position.set(50,0,0);
+    this.mesh.add(this.propeller);
 };
 function createPlane() {
     airplane = new AirPlane();
@@ -641,6 +642,33 @@ function addEnnemies() {
         ennemiesHolder.spawnEnnemies();
     }
 }
+
+starWars = function() {
+    var loader = new THREE.TGALoader();
+    var texture = loader.load( 'spaceship/maps/texture.tga' );
+    var manager = new THREE.LoadingManager();
+    manager.onProgress = function ( item, loaded, total ) {
+        console.log( item, loaded, total );
+    };
+    var loader = new THREE.OBJLoader(manager);
+    loader.load( 'spaceship/toyPlane.obj', function ( object ) {
+        object.traverse( function ( child ) {
+            if ( child instanceof THREE.Mesh ) {
+                // child.material.map = texture;
+                child.scale.set(5, 5, 5);
+                child.castShadow = true;
+                child.receiveShadow = true;
+            }
+        } );
+        object.position.y = 100;
+        object.castShadow = true;
+        // object.position.z =  -10;
+        object.rotation.y = -180 * Math.PI / 180;
+        window.plane = object;
+        scene.add( object );
+    });
+}
+
 
 var gradientTop = 0xf4e0ba;
 var gradientBottom = 0xe7d9aa;
