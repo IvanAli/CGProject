@@ -263,7 +263,7 @@ EnnemiesHolder.prototype.rotateEnnemies = function(){
         var bullpos = bulletSet.mesh.position.clone().sub(ennemy.mesh.position.clone());
         var bull_d = bullpos.length();
         var d = diffPos.length();
-        console.log('SHOT: '+ bull_d);
+        // console.log('SHOT: '+ bull_d);
         if (d<10){
 
             ennemiesPool.unshift(this.ennemiesInUse.splice(i,1)[0]);
@@ -567,8 +567,8 @@ BulletSet.prototype.spawnBullets = function(n) {
         var bullet = new Bullet();
         bullet.mesh.position.x = -5 + i * 20;
         var targetY = normalize(mousePos.y, -1, 1, 25, 175);
-        bullet.mesh.position.y = airplane.mesh.position.y + (airplane.mesh.rotation.z) * 25;
-        bullet.mesh.rotation.z = airplane.mesh.rotation.z;
+        bullet.mesh.position.y = plane.position.y + (plane.rotation.z) * 25;
+        bullet.mesh.rotation.z = plane.rotation.z;
         // bullet.mesh.rotation.z = Math.PI / 5;
         this.currentBullets.push(bullet);
         this.mesh.add(bullet.mesh);
@@ -593,9 +593,7 @@ var ty = 1 - (event.clientY / HEIGHT) * 2;
     };
 }
 function handleMouseDown(event) {
-    if ('buttons' in event) {
-        if (event.buttons === 1) bulletSet.spawnBullets(3);
-    }
+         bulletSet.spawnBullets(3);
 }
 
 function normalize(v, vmin, vmax, tmin, tmax) {
